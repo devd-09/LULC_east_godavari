@@ -14,3 +14,7 @@ Map.addLayer(grass_grazing,{min:259.09090909090907,max:3587.7272727272725},'Gras
 Map.addLayer(barren_salt_sandy_rocky,{min:182.45454545454547,max:3548.625},'Barren, Salt, Sandy, Rocky')
 Map.addLayer(SFCC,{min:493.22727272727275,max:3587.7272727272725},'SFCC')
 Map.addLayer(tcc,{min:529.8888888888889,max:2760.75,gamma:1.33},'TCC')
+var training_points= Waterbodies.merge(Urban).merge(Crop_land).merge(sandy)
+var training_data=SFCC.sampleRegions({collection:training_points,
+                                                properties:['CLASS'],
+                                                scale:30})
