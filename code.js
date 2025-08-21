@@ -1,0 +1,5 @@
+Map.addLayer(study_area,{color:'#585566'},'East Godavrari',true,0.8)
+Map.centerObject(study_area,8)
+var builtup=sentinel2.select('B12','B11','B4').filterDate('2025-01-01','2025-03-31').filterMetadata('CLOUDY_PIXEL_PERCENTAGE','less_than',2).mean().clip(study_area)
+var agriculture=sentinel2.select('B11','B8','B2').filterDate('2025-01-01','2025-03-31').filterMetadata('CLOUDY_PIXEL_PERCENTAGE','less_than',2).mean().clip(study_area)
+var Forest=sentinel2.select('B8A','B11','B4').filterDate('2025-01-01','2025-03-31').filterMetadata('CLOUDY_PIXEL_PERCENTAGE','less_than',2).mean().clip(study_area)
