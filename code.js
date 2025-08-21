@@ -18,3 +18,10 @@ var training_points= Waterbodies.merge(Urban).merge(Crop_land).merge(sandy)
 var training_data=SFCC.sampleRegions({collection:training_points,
                                                 properties:['CLASS'],
                                                 scale:30})
+var ML=ee.Classifier.smileCart()
+var classification=ML.train(training_data,
+                            'CLASS',
+                            ['B8','B4','B3'])
+var lulc=SFCC.classify(classification)
+Map.addLayer(lulc,{},'East Godavari')
+Map.centerObject(study_area,11)                                              
