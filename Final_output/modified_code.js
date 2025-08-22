@@ -70,7 +70,76 @@ Map.centerObject(study_area, 9);
 Map.addLayer(lulc, vis, 'East Godavai LULC');
 
 
-// Will Directly Save To Users Drive
+//Generating bar diagram with each bar according class color codes
+
+var classDict = {
+  1: {name: 'Waterbody',        color: '#0fa1db'},
+  2: {name: 'Urban',            color: '#ff0000'},
+  3: {name: 'Crop Land',        color: '#f9ff00'},
+  4: {name: 'Sandy Area',       color: '#edd798'},
+  5: {name: 'Fallow Land',      color: '#d6ff06'},
+  6: {name: 'Evergreen Forest', color: '#52ac48'},
+  7: {name: 'Deciduous Forest', color: '#2ace18'},
+  8: {name: 'Plantation',       color: '#2ee592'}
+};
+
+var classes = [1,2,3,4,5,6,7,8];
+var labels  = classes.map(function(c){ return classDict[c].name; });
+var colors  = classes.map(function(c){ return classDict[c].color; });
+
+// for calculating and visualising area per square km in bars
+var areaImage = ee.Image.pixelArea().divide(1e6).rename('area_km2');
+var grouped = areaImage.addBands(lulc.rename('class'))
+  .reduceRegion({reducer: ee.Reducer.sum().group({groupField: 1, groupName: 'class'}),geometry: study_area,scale: 60,maxPixels: 1e13,tileScale: 2});
+var groupsList = ee.List(ee.Dictionary(grouped).get('groups'));
+var fcRaw = ee.FeatureCollection(groupsList.map(function(item) {item = ee.Dictionary(item);return ee.Feature(null, {'class': item.get('class'), 'area_km2': item.get('sum')});
+}));
+
+var areas = ee.List(classes).map(function(c){var match = fcRaw.filter(ee.Filter.eq('class', c)).first();return ee.Algorithms.If(match, ee.Number(ee.Feature(match).get('area_km2')), 0);
+});
+
+// creating diagonal matrix so each bar can have own color
+var n = classes.length;
+var idx = ee.List.sequence(0, n - 1);
+var rows = idx.map(function(i){i = ee.Number(i);
+  var ai = ee.Number(areas.get(i));  
+  var row = idx.map(function(j){j = ee.Number(j);return ee.Algorithms.If(i.eq(j), ai, 0);});return row;});
+var mat = ee.Array(rows); 
+
+// Building chart
+var chart = ui.Chart.array.values(mat, 0, labels).setSeriesNames(labels).setChartType('ColumnChart').setOptions({title: 'Area by LULC class (km²)',legend: 'none',hAxis: { title: 'Class' },vAxis: { title: 'Area (km²)' },colors: colors,bar: { groupWidth: '90%' },chartArea: {left: 80, top: 40, width: '75%', height: '65%'}});
+
+print(chart);
+
+
+
+// creating structure to download csv
+var legendNames = ee.Dictionary({
+  '1': 'Waterbody',
+  '2': 'Urban',
+  '3': 'Crop Land',
+  '4': 'Sandy Area',
+  '5': 'Fallow Land',
+  '6': 'Evergreen Forest',
+  '7': 'Deciduous Forest',
+  '8': 'Plantation'
+});
+var areaImage = ee.Image.pixelArea().divide(1e6).rename('area_km2');
+var grouped = areaImage.addBands(lulc.rename('class')).reduceRegion({reducer: ee.Reducer.sum().group({groupField: 1, groupName: 'class'}),geometry: study_area,scale: 60,maxPixels: 1e13,tileScale: 2});
+
+var groupsList = ee.List(ee.Dictionary(grouped).get('groups'));
+var tableFC = ee.FeatureCollection(groupsList.map(function(item) {item = ee.Dictionary(item);return ee.Feature(null, {'class': item.get('class'),'area_km2': item.get('sum')});}));
+
+var totalArea = ee.Number(tableFC.aggregate_sum('area_km2'));
+var exportFC = tableFC.map(function(f){
+  var c = ee.Number(f.get('class'));
+  var label = ee.String(legendNames.get(c.format()));
+  var area  = ee.Number(f.get('area_km2'));
+  var pct   = ee.Algorithms.If(totalArea.gt(0),area.divide(totalArea).multiply(100), 0);return f.set({'label': label,'pct': ee.Number(pct)});});
+
+
+
+// Will Directly Save the LULC To Users Drive
 
 //Export.image.toDrive({
 //  image: lulc.toInt(),
@@ -78,4 +147,14 @@ Map.addLayer(lulc, vis, 'East Godavai LULC');
 //  region: study_area.geometry(),
 //  scale: 10,
 //  maxPixels: 1e13
+//});
+//
+
+// Export to Drive as CSV
+//Export.table.toDrive({
+//  collection: exportFC,
+//  description: 'LULC_area_by_class_km2',
+//  fileNamePrefix: 'LULC_area_by_class_km2',
+//  fileFormat: 'CSV',
+//  selectors: ['class','label','area_km2','pct']  // column order
 //});

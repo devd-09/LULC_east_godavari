@@ -1,0 +1,4 @@
+1. In your gee account upload all the necessary files - training_samples_modified_100.shp, East_godavari_shp
+2. load preferred imagecollection - here sentinel 2 harmonised has been taken - ee.ImageCollection("COPERNICUS/S2_HARMONIZED")
+3. import the uploaded files into gee import section
+4. Copy paste the modified_code.js
