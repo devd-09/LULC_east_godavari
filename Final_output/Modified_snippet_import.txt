@@ -1,0 +1,4 @@
+var sentinel2 = ee.ImageCollection("COPERNICUS/S2_HARMONIZED"),
+    study_area = ee.FeatureCollection("projects/geobvieer/assets/east_godavari"),
+    training = ee.FeatureCollection("projects/geobvieer/assets/modified_training_sample_100"),
+    vis = {"opacity":1,"bands":["classification"],"min":1,"max":8,"palette":["0fa1db","ff0000","f9ff00","edd798","d6ff06","52ac48","2ace18","2ee592"]};
